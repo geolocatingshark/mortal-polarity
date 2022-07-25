@@ -1,6 +1,6 @@
 import lightbulb
 
-from . import autoannounce, cfg
+from . import autopost, cfg
 
 
 @lightbulb.command(
@@ -10,7 +10,7 @@ from . import autoannounce, cfg
 )
 @lightbulb.implements(lightbulb.SlashCommand)
 async def daily_reset(ctx: lightbulb.Context) -> None:
-    ctx.bot.dispatch(autoannounce.DailyResetSignal(ctx.bot))
+    ctx.bot.dispatch(autopost.DailyResetSignal(ctx.bot))
     await ctx.respond("Daily reset signal sent")
 
 
@@ -21,7 +21,7 @@ async def daily_reset(ctx: lightbulb.Context) -> None:
 )
 @lightbulb.implements(lightbulb.SlashCommand)
 async def weekend_reset(ctx: lightbulb.Context) -> None:
-    ctx.bot.dispatch(autoannounce.WeekendResetSignal(ctx.bot))
+    ctx.bot.dispatch(autopost.WeekendResetSignal(ctx.bot))
     await ctx.respond("Weekend reset signal sent")
 
 
