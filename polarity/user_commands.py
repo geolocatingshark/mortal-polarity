@@ -2,7 +2,6 @@
 
 import logging
 
-import aiohttp
 import hikari
 import lightbulb
 from sqlalchemy import String
