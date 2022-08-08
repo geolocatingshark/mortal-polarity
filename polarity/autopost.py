@@ -12,7 +12,7 @@ from sqlalchemy.orm import declarative_mixin, declared_attr
 from sqlalchemy.sql.schema import Column
 
 from . import cfg, custom_checks
-from .utils import _send_embed_if_textable_channel, db_session, operation_timer
+from .utils import _send_embed, db_session, operation_timer
 
 app = web.Application()
 
@@ -186,14 +186,16 @@ class BaseChannelRecord:
                 embed = await settings.get_announce_embed()
                 await asyncio.gather(
                     *[
-                        _send_embed_if_textable_channel(
+                        _send_embed(
                             channel_id,
                             event,
                             embed,
                             cls,
+                            announce_if_guild=cfg.kyber_discord_server_id,
                         )
                         for channel_id in channel_id_list
-                    ]
+                    ],
+                    return_exceptions=True
                 )
 
 
