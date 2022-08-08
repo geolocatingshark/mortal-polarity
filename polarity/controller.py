@@ -16,5 +16,5 @@ async def kyber():
     pass
 
 
-def register_all(bot: lightbulb.BotApp) -> None:
+def register(bot: lightbulb.BotApp) -> None:
     bot.command(kyber)
