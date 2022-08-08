@@ -1,11 +1,9 @@
 import lightbulb
-import hikari
 
 from . import cfg
 
 
 @lightbulb.add_checks(lightbulb.checks.has_roles(cfg.admin_role))
-@lightbulb.app_command_permissions(hikari.Permissions.USE_APPLICATION_COMMANDS)
 @lightbulb.command(
     "kyber",
     "Commands for Kyber",
