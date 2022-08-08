@@ -35,6 +35,7 @@ class Commands(Base):
 
 
 @lightbulb.add_checks(lightbulb.checks.has_roles(cfg.admin_role))
+@lightbulb.app_command_permissions(hikari.Permissions.USE_APPLICATION_COMMANDS)
 @lightbulb.option("response", "Response to post when this command is used", type=str)
 @lightbulb.option(
     "description", "Description of what the command posts or does", type=str
@@ -81,6 +82,7 @@ async def add_command(ctx: lightbulb.Context) -> None:
 
 
 @lightbulb.add_checks(lightbulb.checks.has_roles(cfg.admin_role))
+@lightbulb.app_command_permissions(hikari.Permissions.USE_APPLICATION_COMMANDS)
 @lightbulb.option(
     "name",
     "Name of the command to delete",
@@ -116,6 +118,7 @@ async def del_command(ctx: lightbulb.Context) -> None:
 
 
 @lightbulb.add_checks(lightbulb.checks.has_roles(cfg.admin_role))
+@lightbulb.app_command_permissions(hikari.Permissions.USE_APPLICATION_COMMANDS)
 @lightbulb.option(
     "new_description",
     "Description of the command to edit",
