@@ -204,8 +204,6 @@ class BaseUrlSignal(BaseCustomEvent):
 
 
 class UrlAutopostsBase(AutopostsBase):
-    _partials_applied = False
-
     def __init__(
         self,
         settings_table: Type[UrlPostSettings],
