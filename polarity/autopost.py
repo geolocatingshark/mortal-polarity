@@ -96,10 +96,8 @@ class BaseChannelRecord:
                 )
             )
         )
-        bot.listen(announce_event)(functools.partial(cls.announcer, cls))
+        bot.listen(announce_event)(cls.announcer)
 
-    # Note this is a classmethod with cls supplied by functools.partial
-    # from within the cls.register_with_bot function
     @staticmethod
     async def autopost_ctrl_usr_cmd(
         # Command for the user to be able to control autoposts in their server
@@ -163,9 +161,7 @@ class BaseChannelRecord:
             else:
                 return True
 
-    # Note this is a classmethod with cls supplied by functools.partial
-    # from within the cls.register_with_bot function
-    @staticmethod
+    @classmethod
     async def announcer(cls, event):
         async with db_session() as session:
             async with session.begin():
