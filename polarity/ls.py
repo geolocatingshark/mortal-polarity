@@ -35,14 +35,14 @@ from .utils import (
 
 class LostSectorPostSettings(BasePostSettings, Base):
     twitter_ls_post_string = (
-        "Daily Lost Sector for {month} {day}\n"
-        + "(kyber3000.com/LS)\n\n"
-        + "{sector.name}:\n"
-        + "• Exotic Reward (If Solo): {sector.reward}\n"
+        "Lost Sector Today\n\n"
+        + "💠 {sector.name}\n\n"
+        + "• Reward (If-Solo): {sector.reward}\n"
         + "• Champs: {sector.champions}\n"
         + "• Shields: {sector.shields}\n"
         + "• Burn: {sector.burn}\n"
         + "• Modifiers: {sector.modifiers}\n\n"
+        + "ℹ️ : https://lostsectortoday.com/"
     )
 
     async def get_announce_embed(self, date: dt.date = None) -> hikari.Embed:
@@ -66,16 +66,18 @@ class LostSectorPostSettings(BasePostSettings, Base):
         }
 
         return hikari.Embed(
-            title="**Daily Lost Sector for {month} {day}**".format(**format_dict),
+            title="**Lost Sector Today**".format(**format_dict),
             description=(
-                "<:LS:849727805994565662> **{sector.name}**:\n\n"
-                + "• Exotic Reward (If Solo): {sector.reward}\n"
-                + "• Champs: {sector.champions}\n"
-                + "• Shields: {sector.shields}\n"
-                + "• Burn: {sector.burn}\n"
-                + "• Modifiers: {sector.modifiers}\n"
+                "⠀\n<:LS:849727805994565662> **{sector.name}\n\n".format(
+                    **format_dict
+                ).replace(" (", "** (", 1)
+                + "• **Reward (If-Solo)**: {sector.reward}\n"
+                + "• **Champs**: {sector.champions}\n"
+                + "• **Shields**: {sector.shields}\n"
+                + "• **Burn**: {sector.burn}\n"
+                + "• **Modifiers**: {sector.modifiers}\n"
                 + "\n"
-                + "**More Info:** <https://kyber3000.com/LS>"
+                + "ℹ️ : <https://lostsectortoday.com/>"
             ).format(**format_dict),
             color=cfg.kyber_pink,
         ).set_image(ls_gfx_url)
