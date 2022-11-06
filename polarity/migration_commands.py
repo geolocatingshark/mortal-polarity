@@ -46,11 +46,15 @@ async def migratability(ctx: lightbulb.Context) -> None:
         no_of_channels = len(channel_id_list)
         no_of_channels_w_perms = 0
         no_of_non_guild_channels = 0
+        no_not_found = 0
         for channel_id in channel_id_list:
 
-            channel = bot.cache.get_guild_channel(
-                channel_id
-            ) or await bot.rest.fetch_channel(channel_id)
+            try:
+                channel = bot.cache.get_guild_channel(
+                    channel_id
+                ) or await bot.rest.fetch_channel(channel_id)
+            except h.errors.NotFoundError:
+                no_not_found += 1
 
             if not isinstance(channel, h.TextableGuildChannel):
                 no_of_non_guild_channels += 1
@@ -72,8 +76,11 @@ async def migratability(ctx: lightbulb.Context) -> None:
 
         embed.add_field(
             channel_type,
-            "({} Migratable + {} Not Applicable) / {} Total".format(
-                no_of_channels_w_perms, no_of_non_guild_channels, no_of_channels
+            "({} Migratable + {} Not Applicable + {} Not Found) / {} Total".format(
+                no_of_channels_w_perms,
+                no_of_non_guild_channels,
+                no_not_found,
+                no_of_channels,
             ),
             inline=False,
         )
