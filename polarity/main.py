@@ -14,6 +14,8 @@ from .xur import xur
 uvloop.install()
 bot: lightbulb.BotApp = lightbulb.BotApp(**cfg.lightbulb_params)
 
+logger = logging.getLogger(__name__)
+
 
 @tasks.task(m=30, auto_start=True, wait_before_execution=False)
 async def autoupdate_status():
@@ -30,7 +32,7 @@ async def autoupdate_status():
 
 
 if __name__ == "__main__":
-    logging.info("Listening on port number {}".format(cfg.port))
+    logger.info("Listening on port number {}".format(cfg.port))
     autoposts.register(bot)
     controller.register(bot)
     lost_sectors.register(bot)

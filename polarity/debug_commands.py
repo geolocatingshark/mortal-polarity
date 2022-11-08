@@ -1,12 +1,16 @@
+import logging
+
 import lightbulb
 
 from . import cfg
-from .utils import _discord_alert
 from .reset_signaller import (
     remote_daily_reset,
     remote_weekend_reset,
     remote_weekly_reset,
 )
+from .utils import _discord_alert
+
+logger = logging.getLogger(__name__)
 
 
 @lightbulb.command(
@@ -70,6 +74,7 @@ async def test_alert(ctx: lightbulb.Context) -> None:
         bot=ctx.bot,
         channel=cfg.alerts_channel_id,
         mention_mods=True,
+        logger=logger,
     )
     await ctx.respond("Done")
 
