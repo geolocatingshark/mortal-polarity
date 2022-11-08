@@ -1,12 +1,13 @@
+import logging
+
 import hikari
 import lightbulb
 import uvloop
 from lightbulb.ext import tasks
 
-from . import cfg, controller, debug_commands, user_commands, migration_commands
+from . import cfg, controller, debug_commands, migration_commands, user_commands
 from .autopost import autoposts
 from .ls import lost_sectors
-
 from .weekly_reset import weekly_reset
 from .xur import xur
 
@@ -29,6 +30,7 @@ async def autoupdate_status():
 
 
 if __name__ == "__main__":
+    logging.info("Listening on port number {}".format(cfg.port))
     autoposts.register(bot)
     controller.register(bot)
     lost_sectors.register(bot)
