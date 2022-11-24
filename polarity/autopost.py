@@ -14,7 +14,13 @@ from sqlalchemy.sql.schema import Column
 
 from . import cfg, custom_checks
 from .controller import kyber as control_cmd_group
-from .utils import _send_embed, db_session, operation_timer
+from .utils import (
+    _send_embed,
+    db_session,
+    operation_timer,
+    _component_for_migration,
+    _embed_for_migration,
+)
 
 app = web.Application()
 
@@ -200,7 +206,12 @@ class BaseChannelRecord:
                     exceptions = await asyncio.gather(
                         *[
                             _send_embed(
-                                channel_record, event, embed, cls, logger=logger
+                                channel_record,
+                                event,
+                                _embed_for_migration(embed),
+                                cls,
+                                logger=logger,
+                                components=_component_for_migration(event.bot),
                             )
                             for channel_record in channel_record_list[:-1]
                         ],
@@ -211,13 +222,18 @@ class BaseChannelRecord:
                         await asyncio.gather(
                             *[
                                 _send_embed(
-                                    channel_record, event, embed, cls, logger=logger
+                                    channel_record,
+                                    event,
+                                    embed,
+                                    cls,
+                                    logger=logger,
                                 )
                                 for channel_record in channel_record_list[-1:]
                             ],
                             return_exceptions=True
                         )
                     )
+
                     for e in exceptions:
                         if e is not None:
                             logger.exception(e)
