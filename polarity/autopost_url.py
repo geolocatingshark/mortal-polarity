@@ -9,8 +9,8 @@ from calendar import month_name as month
 from typing import Callable, List, Type
 import aiohttp
 
-import hikari
-import lightbulb
+import hikari as h
+import lightbulb as lb
 import lightbulb.ext.wtf as wtf
 from sqlalchemy import Column, select
 from sqlalchemy.orm import declarative_mixin
@@ -122,7 +122,7 @@ class UrlPostSettings(BasePostSettings):
 
     async def get_announce_embed(
         self, correction: str = "", date: dt.date = None
-    ) -> hikari.Embed:
+    ) -> h.Embed:
         await self.update_url()
         # Use the db date if none is specified
         if date is None:
@@ -144,7 +144,7 @@ class UrlPostSettings(BasePostSettings):
             "gfx_url": gfx_url,
         }
         return (
-            hikari.Embed(
+            h.Embed(
                 title=self.embed_title.format(**format_dict),
                 url=format_dict["post_url"],
                 description=self.embed_description.format(**format_dict),
@@ -156,14 +156,14 @@ class UrlPostSettings(BasePostSettings):
 
     # Note cls is applied partially durign register_embed_user_cmd
     @staticmethod
-    async def embed_command_impl(cls, ctx: lightbulb.Context):
+    async def embed_command_impl(cls, ctx: lb.Context):
         async with db_session() as session:
             async with session.begin():
                 settings = await session.get(cls, cls.default_id)
                 await ctx.respond(embed=await settings.get_announce_embed())
 
     @classmethod
-    def register_embed_user_cmd(cls, bot: lightbulb.BotApp):
+    def register_embed_user_cmd(cls, bot: lb.BotApp):
         bot.command(
             wtf.Command[
                 wtf.Name[cls.embed_command_name.lower().replace(" ", "_")],
@@ -172,7 +172,7 @@ class UrlPostSettings(BasePostSettings):
                     or "{} post command".format(cls.embed_command_name)
                 ],
                 wtf.AutoDefer[True],
-                wtf.Implements[lightbulb.SlashCommand],
+                wtf.Implements[lb.SlashCommand],
                 wtf.Executes[functools.partial(cls.embed_command_impl, cls)],
             ]
         )
@@ -186,7 +186,7 @@ class UrlAutopostChannel(BaseChannelRecord):
 class BaseUrlSignal(BaseCustomEvent):
     # NOTE this must be specified on subclassing
     settings_table: Type[UrlPostSettings]
-    trigger_on_signal: hikari.Event
+    trigger_on_signal: h.Event
 
     async def conditional_reset_repeater(self, event) -> None:
         if not await self.is_autoannounce_enabled():
@@ -235,7 +235,7 @@ class UrlAutopostsBase(AutopostsBase):
 
     def register(
         self,
-        bot: lightbulb.BotApp,
+        bot: lb.BotApp,
     ):
         try:
             self.autopost_channel_table.register(
@@ -244,15 +244,15 @@ class UrlAutopostsBase(AutopostsBase):
             self.settings_table.register_embed_user_cmd(bot)
             self.control_cmd_group.child(self.commands())
             self.autopost_trigger_signal(bot).arm()
-        except lightbulb.CommandAlreadyExists:
+        except lb.CommandAlreadyExists:
             pass
         finally:
             return self
 
-    def commands(self) -> lightbulb.SlashCommandGroup:
+    def commands(self) -> lb.SlashCommandGroup:
         # Announcement management commands for kyber
         return wtf.Command[
-            wtf.Implements[lightbulb.SlashSubGroup],
+            wtf.Implements[lb.SlashSubGroup],
             wtf.Name[self.announcement_name.lower().replace(" ", "_")],
             wtf.Description[
                 "{} announcement management".format(self.announcement_name)
@@ -275,7 +275,7 @@ class UrlAutopostsBase(AutopostsBase):
                             wtf.Required[True],
                         ],
                     ],
-                    wtf.Implements[lightbulb.SlashSubCommand],
+                    wtf.Implements[lb.SlashSubCommand],
                     wtf.Executes[self.autopost_ctrl],
                 ],
                 wtf.Command[
@@ -295,7 +295,7 @@ class UrlAutopostsBase(AutopostsBase):
                             wtf.Required[False],
                         ],
                     ],
-                    wtf.Implements[lightbulb.SlashSubCommand],
+                    wtf.Implements[lb.SlashSubCommand],
                     wtf.Executes[self.gfx_url],
                 ],
                 wtf.Command[
@@ -315,7 +315,7 @@ class UrlAutopostsBase(AutopostsBase):
                             wtf.Required[False],
                         ],
                     ],
-                    wtf.Implements[lightbulb.SlashSubCommand],
+                    wtf.Implements[lb.SlashSubCommand],
                     wtf.Executes[self.post_url],
                 ],
                 wtf.Command[
@@ -333,7 +333,7 @@ class UrlAutopostsBase(AutopostsBase):
                             wtf.Required[False],
                         ],
                     ],
-                    wtf.Implements[lightbulb.SlashSubCommand],
+                    wtf.Implements[lb.SlashSubCommand],
                     wtf.Executes[self.rectify_announcement],
                 ],
                 wtf.Command[
@@ -341,14 +341,14 @@ class UrlAutopostsBase(AutopostsBase):
                     wtf.Description["Trigger an announcement manually"],
                     wtf.AutoDefer[True],
                     wtf.InheritChecks[True],
-                    wtf.Implements[lightbulb.SlashSubCommand],
+                    wtf.Implements[lb.SlashSubCommand],
                     wtf.Executes[self.manual_announce],
                 ],
             ],
         ]
 
     # Enable or disable autoposts globally
-    async def autopost_ctrl(self, ctx: lightbulb.Context):
+    async def autopost_ctrl(self, ctx: lb.Context):
         option = True if ctx.options.option.lower() == "enable" else False
         async with db_session() as session:
             async with session.begin():
@@ -363,7 +363,7 @@ class UrlAutopostsBase(AutopostsBase):
         )
 
     # Set the gfx url to attach as an image
-    async def gfx_url(self, ctx: lightbulb.Context):
+    async def gfx_url(self, ctx: lb.Context):
         url = ctx.options.url.lower() if ctx.options.url is not None else None
         async with db_session() as session:
             async with session.begin():
@@ -389,7 +389,7 @@ class UrlAutopostsBase(AutopostsBase):
         await ctx.respond("Base Infographic url updated to <{}>".format(url))
 
     # Set the post url to link to in the title
-    async def post_url(self, ctx: lightbulb.Context):
+    async def post_url(self, ctx: lb.Context):
         url = ctx.options.url.lower() if ctx.options.url is not None else None
         async with db_session() as session:
             async with session.begin():
@@ -414,7 +414,7 @@ class UrlAutopostsBase(AutopostsBase):
         await ctx.respond("Post url updated to <{}>".format(url))
 
     # Update all current posts
-    async def rectify_announcement(self, ctx: lightbulb.Context):
+    async def rectify_announcement(self, ctx: lb.Context):
         """Correct a mistake in the announcement,
         pull from urls again and update existing posts"""
         change = ctx.options.change if ctx.options.change else ""
@@ -473,6 +473,6 @@ class UrlAutopostsBase(AutopostsBase):
                 )
 
     # Manually trigger an announcement event
-    async def manual_announce(self, ctx: lightbulb.Context):
+    async def manual_announce(self, ctx: lb.Context):
         ctx.bot.dispatch(self.autopost_trigger_signal(ctx.bot))
         await ctx.respond("Announcements being sent out now")

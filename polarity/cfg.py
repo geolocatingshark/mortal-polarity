@@ -1,7 +1,7 @@
 import abc
 from os import getenv as _getenv
 
-import hikari
+import hikari as h
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # Discord API Token
@@ -79,7 +79,7 @@ sheets_ls_url = _getenv("SHEETS_LS_URL")
 
 port = int(_getenv("PORT") or 5000)
 
-kyber_pink = hikari.Color(0xEC42A5)
+kyber_pink = h.Color(0xEC42A5)
 
 
 class defaults(abc.ABC):
