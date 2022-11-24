@@ -133,6 +133,7 @@ async def migrate(ctx: lb.Context):
             forbidden = 0
             bad_request = 0
             not_guild = 0
+            migrated = 0
             iterations = 0
 
             await ctx.respond(
@@ -180,6 +181,7 @@ async def migrate(ctx: lb.Context):
                     else:
                         channel_record.enabled = False
                         session.add(channel_record)
+                        migrated += 1
                     finally:
                         iterations += 1
                         rate = time_till(dt.datetime.now()) / iterations
@@ -192,6 +194,7 @@ async def migrate(ctx: lb.Context):
                                 + "{} forbidden\n".format(forbidden)
                                 + "{} not found\n".format(not_found)
                                 + "{} not in a guild\n".format(not_guild)
+                                + "{} successfully migrated\n".format(migrated)
                                 + "{} total".format(iterations)
                             )
                             if iterations >= len(channel_record_list):
