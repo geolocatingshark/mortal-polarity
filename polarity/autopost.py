@@ -121,7 +121,7 @@ class BaseChannelRecord:
         server_id: int = ctx.guild_id if ctx.guild_id is not None else -1
         option: bool = True if ctx.options.option.lower() == "enable" else False
         bot = ctx.bot
-        if await cls._check_bot_has_message_perms(bot, channel_id):
+        try:
             async with db_session() as session:
                 async with session.begin():
                     channel = await session.get(cls, channel_id)
@@ -134,45 +134,11 @@ class BaseChannelRecord:
                 " ".join(re.findall("[A-Z][^A-Z]*", cls.__name__)[:-2])
                 + " autoposts {}".format("enabled" if option else "disabled")
             )
-        else:
+        except h.ForbiddenError:
             await ctx.respond(
                 'The bot does not have the "Send Messages" or the'
                 + ' "Send Messages in Threads" permission here'
             )
-
-    @staticmethod
-    async def _check_bot_has_message_perms(
-        bot: lb.BotApp, channel: Union[h.TextableChannel, int]
-    ) -> bool:
-        if not isinstance(channel, h.TextableChannel):
-            # Get channel from cache if possible
-            channel = bot.cache.get_guild_channel(
-                channel
-            ) or await bot.rest.fetch_channel(channel)
-
-        if isinstance(channel, h.TextableChannel):
-            if isinstance(channel, h.TextableGuildChannel):
-                guild = channel.get_guild() or await channel.fetch_guild()
-                self_member = bot.cache.get_member(
-                    guild, bot.get_me()
-                ) or await bot.rest.fetch_member(guild, bot.get_me())
-                perms = lb.utils.permissions_in(channel, self_member)
-                # Check if we have the send messages permission in the channel
-                # Refer to h.Permissions to see how / why this works
-                # Note: hikari doesn't recognize threads
-                # Channel types 10, 11, 12 and 15 are thread types as specified in:
-                # https://discord.com/developers/docs/resources/channel#channel-object-channel-types
-                # If the channel is a thread, we need to check for the SEND_MESSAGES_IN_THREADS perm
-                if channel.type in [10, 11, 12, 15]:
-                    return (
-                        h.Permissions.SEND_MESSAGES_IN_THREADS & perms
-                    ) == h.Permissions.SEND_MESSAGES_IN_THREADS
-                else:
-                    return (
-                        h.Permissions.SEND_MESSAGES & perms
-                    ) == h.Permissions.SEND_MESSAGES
-            else:
-                return True
 
     @classmethod
     async def announcer(cls, event):
