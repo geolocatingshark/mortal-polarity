@@ -10,9 +10,9 @@ from sqlalchemy.sql.expression import delete, select
 from sqlalchemy.sql.schema import Column
 
 from . import cfg, ls
+from .autopost import BaseCustomEvent
 from .utils import (
     Base,
-    RefreshCmdListEvent,
     db_session,
     follow_link_single_step,
     url_regex,
@@ -21,6 +21,20 @@ from .utils import (
 command_registry = {}
 
 logger = logging.getLogger(__name__)
+
+
+class RefreshCmdListEvent(BaseCustomEvent):
+    """Event to trigger a refresh of the user (Kyber) defined commands"""
+
+    def dispatch(self, sync: bool = True):
+        # sync: Whether to resync the command list with discord
+        self.sync = sync
+        return super().dispatch()
+
+    @classmethod
+    def dispatch_with(cls, *, bot, sync: bool = True):
+        # sync: Whether to resync the command list with discord
+        cls.register(bot).dispatch(sync)
 
 
 class Commands(Base):
@@ -76,7 +90,7 @@ async def add_command(ctx: lb.Context) -> None:
             command_registry[command.name] = db_command_to_lb_user_command(command)
             bot.command(command_registry[command.name])
             logger.info(command.name + " command registered")
-            RefreshCmdListEvent(bot).dispatch()
+            RefreshCmdListEvent.dispatch_with(bot=bot)
 
     await ctx.respond("Command added")
 
@@ -113,7 +127,7 @@ async def del_command(ctx: lb.Context) -> None:
                 bot.remove_command(command_to_delete)
                 await ctx.respond("{} command deleted".format(name))
     # Trigger a refresh of the choices in the delete command
-    RefreshCmdListEvent(bot).dispatch()
+    RefreshCmdListEvent.dispatch_with(bot=bot)
 
 
 @lb.add_checks(lb.checks.has_roles(cfg.admin_role))
@@ -219,7 +233,7 @@ async def edit_command(ctx: lb.Context):
             ]:
                 # If either the description or name of a command is changed
                 # we will need to have discord update its commands server side
-                RefreshCmdListEvent(bot).dispatch()
+                RefreshCmdListEvent.dispatch_with(bot=bot)
 
             await ctx.respond("Command updated")
 
@@ -260,7 +274,7 @@ async def register_commands_on_startup(event: h.StartingEvent):
     # Trigger a refresh of the options in the delete command
     # Don't sync since the bot has not started yet and
     # Will sync on its own for startup
-    RefreshCmdListEvent(event.app, sync=False).dispatch()
+    RefreshCmdListEvent.dispatch_with(bot=event.app, sync=False)
 
 
 async def on_error(event: lb.CommandErrorEvent):

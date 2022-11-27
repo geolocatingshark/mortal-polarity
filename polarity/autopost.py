@@ -188,40 +188,6 @@ class BaseChannelRecord:
                 channel=cfg.alerts_channel_id,
             )
 
-    @staticmethod
-    async def _check_bot_has_message_perms(
-        bot: lb.BotApp, channel: Union[h.TextableChannel, int]
-    ) -> bool:
-        if not isinstance(channel, h.TextableChannel):
-            # Get channel from cache if possible
-            channel = bot.cache.get_guild_channel(
-                channel
-            ) or await bot.rest.fetch_channel(channel)
-
-        if isinstance(channel, h.TextableChannel):
-            if isinstance(channel, h.TextableGuildChannel):
-                guild = channel.get_guild() or await channel.fetch_guild()
-                self_member = bot.cache.get_member(
-                    guild, bot.get_me()
-                ) or await bot.rest.fetch_member(guild, bot.get_me())
-                perms = lb.utils.permissions_in(channel, self_member)
-                # Check if we have the send messages permission in the channel
-                # Refer to h.Permissions to see how / why this works
-                # Note: hikari doesn't recognize threads
-                # Channel types 10, 11, 12 and 15 are thread types as specified in:
-                # https://discord.com/developers/docs/resources/channel#channel-object-channel-types
-                # If the channel is a thread, we need to check for the SEND_MESSAGES_IN_THREADS perm
-                if channel.type in [10, 11, 12, 15]:
-                    return (
-                        h.Permissions.SEND_MESSAGES_IN_THREADS & perms
-                    ) == h.Permissions.SEND_MESSAGES_IN_THREADS
-                else:
-                    return (
-                        h.Permissions.SEND_MESSAGES & perms
-                    ) == h.Permissions.SEND_MESSAGES
-            else:
-                return True
-
     @classmethod
     async def announcer(cls, event):
         async with db_session() as session:
@@ -249,7 +215,7 @@ class BaseChannelRecord:
                     *(
                         [
                             send_message(
-                                event.bot,
+                                event.app,
                                 cls.follow_channel,
                                 message_kwargs={"embed": embed},
                                 crosspost=True,
@@ -257,11 +223,11 @@ class BaseChannelRecord:
                         ]
                         + [
                             send_message(
-                                event.bot,
+                                event.app,
                                 channel_id,
                                 message_kwargs={
                                     "embed": _embed_for_migration(embed),
-                                    "components": _component_for_migration(event.bot),
+                                    "components": _component_for_migration(event.app),
                                 },
                             )
                             for channel_id in channel_id_list
@@ -281,13 +247,29 @@ class BaseChannelRecord:
 
 
 class BaseCustomEvent(h.Event):
-    def __init__(self, bot) -> None:
-        super().__init__()
-        self.bot: lb.BotApp = bot
+    @classmethod
+    def register(cls, bot: lb.BotApp) -> h.Event:
+        """Instantiate the event and set the .app property to the specified bot"""
+        self = cls()
+        self._app = bot
+        return self
+
+    def dispatch(self):
+        """Sends out the registered event.
+
+        .register must be called before using this
+        ie this must be on a correctly instantiated event object"""
+        self.app.event_manager.dispatch(self)
+
+    @classmethod
+    def dispatch_with(cls, *, bot: lb.BotApp):
+        """Shortcut method to .register(bot=bot).dispatch()"""
+        cls.register(bot).dispatch()
 
     @property
     def app(self) -> lb.BotApp:
-        return self.bot
+        """Property that returns the bot this event is registered with"""
+        return self._app
 
 
 # Event that dispatches itself when a destiny 2 daily reset occurs.
@@ -297,15 +279,16 @@ class BaseCustomEvent(h.Event):
 class ResetSignal(BaseCustomEvent):
     qualifier: str
 
-    def fire(self) -> None:
-        self.bot.event_manager.dispatch(self)
+    async def remote_dispatch(self, request: web.Request) -> web.Response:
+        """Function to be called when converting a http post -> a dispatched bot signal
 
-    async def remote_fire(self, request: web.Request) -> web.Response:
+        This function checks that the call was from localhost and then fires the signal
+        Returns an aiohttp response (either 200: Success or 401)"""
         if str(request.remote) == "127.0.0.1":
             logger.info(
                 "{self.qualifier} reset signal received and passed on".format(self=self)
             )
-            self.fire()
+            self.dispatch()
             return web.Response(status=200)
         else:
             logger.warning(
@@ -316,13 +299,14 @@ class ResetSignal(BaseCustomEvent):
             return web.Response(status=401)
 
     def arm(self) -> None:
-        # Run the hypercorn server to wait for the signal
-        # This method is non-blocking
+        """Adds the route for this signal to the aiohttp routes table
+
+        Must be called for aiohttp to dispatch bot signals on http signal receipt"""
         app.add_routes(
             [
                 web.post(
                     "/{self.qualifier}-reset-signal".format(self=self),
-                    self.remote_fire,
+                    self.remote_dispatch,
                 ),
             ]
         )
@@ -387,9 +371,9 @@ class AutopostsBase(ABC):
 
 class Autoposts(AutopostsBase):
     def register(self, bot: lb.BotApp) -> None:
-        DailyResetSignal(bot).arm()
-        WeeklyResetSignal(bot).arm()
-        WeekendResetSignal(bot).arm()
+        DailyResetSignal.register(bot).arm()
+        WeeklyResetSignal.register(bot).arm()
+        WeekendResetSignal.register(bot).arm()
         bot.listen(h.StartedEvent)(start_signal_receiver)
 
         # Connect commands
