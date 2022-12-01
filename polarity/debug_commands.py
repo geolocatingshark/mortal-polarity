@@ -24,7 +24,7 @@ async def daily_reset(ctx: lightbulb.Context) -> None:
     # Move from internal signalling to http signalling for these
     # commands, which makes them a more reliable test
     # ctx.bot.dispatch(autopost.DailyResetSignal(ctx.bot))
-    await remote_daily_reset()
+    await remote_daily_reset(port=cfg.port)
     await ctx.respond("Daily reset signal sent")
 
 
@@ -38,7 +38,7 @@ async def weekly_reset(ctx: lightbulb.Context) -> None:
     # Move from internal signalling to http signalling for these
     # commands, which makes them a more reliable test
     # ctx.bot.dispatch(autopost.WeeklyResetSignal(ctx.bot))
-    await remote_weekly_reset()
+    await remote_weekly_reset(port=cfg.port)
     await ctx.respond("Weekly reset signal sent")
 
 
@@ -52,7 +52,7 @@ async def weekend_reset(ctx: lightbulb.Context) -> None:
     # Move from internal signalling to http signalling for these
     # commands, which makes them a more reliable test
     # ctx.bot.dispatch(autopost.WeekendResetSignal(ctx.bot))
-    await remote_weekend_reset()
+    await remote_weekend_reset(port=cfg.port)
     await ctx.respond("Weekend reset signal sent")
 
 

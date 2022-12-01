@@ -37,27 +37,27 @@ _scheduler = AsyncIOScheduler(
 )
 
 
-async def remote_daily_reset():
+async def remote_daily_reset(port=PORT):
     print("Sending daily reset signal")
     async with aiohttp.ClientSession() as session:
         await session.post(
-            "http://127.0.0.1:{}/daily-reset-signal".format(PORT), verify_ssl=False
+            "http://127.0.0.1:{}/daily-reset-signal".format(port), verify_ssl=False
         )
 
 
-async def remote_weekly_reset():
+async def remote_weekly_reset(port=PORT):
     print("Sending weekly reset signal")
     async with aiohttp.ClientSession() as session:
         await session.post(
-            "http://127.0.0.1:{}/weekly-reset-signal".format(PORT), verify_ssl=False
+            "http://127.0.0.1:{}/weekly-reset-signal".format(port), verify_ssl=False
         )
 
 
-async def remote_weekend_reset():
+async def remote_weekend_reset(port=PORT):
     print("Sending weekend signal")
     async with aiohttp.ClientSession() as session:
         await session.post(
-            "http://127.0.0.1:{}/weekend-reset-signal".format(PORT),
+            "http://127.0.0.1:{}/weekend-reset-signal".format(port),
             verify_ssl=False,
         )
 
