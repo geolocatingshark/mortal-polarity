@@ -5,7 +5,7 @@ import lightbulb as lb
 import uvloop
 from lightbulb.ext import tasks
 
-from . import cfg, controller, migration_commands, user_commands
+from . import cfg, controller, debug_commands, migration_commands, user_commands
 from .autopost import autoposts
 from .ls import lost_sectors
 from .weekly_reset import weekly_reset
@@ -40,5 +40,7 @@ if __name__ == "__main__":
     weekly_reset.register(bot)
     xur.register(bot)
     tasks.load(bot)
+    if cfg.test_env:
+        debug_commands.register_all(bot)
     migration_commands.register_all(bot)
     bot.run()
