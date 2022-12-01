@@ -16,7 +16,7 @@ import lightbulb as lb
 import toolbox
 import yarl
 from pytz import utc
-from sqlalchemy import update
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 

@@ -261,7 +261,6 @@ class LostSectors(AutopostsBase):
 
     async def update(self, ctx: lb.Context):
         """Correct a mistake in the announcement"""
-        change = ctx.options.change if ctx.options.change else ""
         async with db_session() as session:
             async with session.begin():
                 settings: LostSectorPostSettings = await session.get(
@@ -271,18 +270,8 @@ class LostSectors(AutopostsBase):
                     await ctx.respond("Please enable autoposts before using this cmd")
 
                 channel_record_list = (
-                    await session.execute(
-                        select(self.autopost_channel_table).where(
-                            self.autopost_channel_table.enabled == True
-                        )
-                    )
-                ).fetchall()
-                channel_record_list = (
-                    [] if channel_record_list is None else channel_record_list
+                    await self.autopost_channel_table.get_enabled_channels(session)
                 )
-                channel_record_list: List[BaseChannelRecord] = [
-                    channel[0] for channel in channel_record_list
-                ]
             logger.info("Correcting posts")
             with operation_timer("Announce correction", logger):
                 await ctx.respond("Correcting posts now")

@@ -203,12 +203,8 @@ class BaseChannelRecord:
             async with session.begin():
                 settings: BasePostSettings = await session.get(cls.settings_records, 0)
             async with session.begin():
-                channel_id_list = (
-                    await session.execute(select(cls).where(cls.enabled == True))
-                ).fetchall()
-                channel_id_list = [] if channel_id_list is None else channel_id_list
-                channel_record_list = [channel[0] for channel in channel_id_list]
-                channel_id_list = [channel[0].id for channel in channel_id_list]
+                channel_record_list = await cls.get_enabled_channels(session)
+                channel_id_list = [channel.id for channel in channel_record_list]
 
             logger.info(
                 # Note, need to implement regex to specify which announcement
@@ -257,6 +253,17 @@ class BaseChannelRecord:
                             msg: h.Message = e
                             channel_record.last_msg_id = msg.id
                 await session.commit()
+
+    @classmethod
+    async def get_enabled_channels(cls, session):
+        """Helper  method to get enabled channels from a channel_table
+
+        session must be a current session"""
+        channel_record_list = (
+            await session.execute(select(cls).where(cls.enabled == True))
+        ).fetchall()
+        channel_record_list = [] if channel_record_list is None else channel_record_list
+        return [channel[0] for channel in channel_record_list]
 
 
 class BaseCustomEvent(h.Event):

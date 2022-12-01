@@ -105,7 +105,7 @@ async def migrate(ctx: lb.Context):
     bot: lb.BotApp = ctx.bot
     disable_moved = ctx.options.disable_moved
 
-    channel_record_list_all_types = []
+    channel_record_list = []
     async with db_session() as session:
         async with session.begin():
             for follow_channel, channel_table in [
@@ -113,16 +113,9 @@ async def migrate(ctx: lb.Context):
                 (cfg.xur_follow_channel_id, xur.XurAutopostChannel),
                 (cfg.reset_follow_channel_id, weekly_reset.WeeklyResetAutopostChannel),
             ]:
-                channel_record_list = (
-                    await session.execute(
-                        select(channel_table).where(channel_table.enabled == True)
-                    )
-                ).fetchall()
-                channel_record_list = (
-                    [] if channel_record_list is None else channel_record_list
+                channel_record_list.extend(
+                    await channel_table.get_enabled_channels(session)
                 )
-                channel_record_list = [channel[0] for channel in channel_record_list]
-                channel_record_list_all_types.extend(channel_record_list)
 
             not_found = 0
             forbidden = 0
@@ -152,15 +145,13 @@ async def migrate(ctx: lb.Context):
                 )
                 .add_field(
                     name="Progress",
-                    value="{} / {}".format(
-                        iterations, len(channel_record_list_all_types)
-                    ),
+                    value="{} / {}".format(iterations, len(channel_record_list)),
                 )
             )
             await ctx.respond(embed=reporting_embed)
 
             with operation_timer("Migrate") as time_till:
-                for channel_record in channel_record_list_all_types:
+                for channel_record in channel_record_list:
                     try:
                         channel = bot.cache.get_guild_channel(
                             channel_record.id
@@ -206,7 +197,7 @@ async def migrate(ctx: lb.Context):
                         iterations += 1
                         rate = time_till(dt.datetime.now()) / iterations
                         if iterations % round(10 / rate) == 0 or iterations >= len(
-                            channel_record_list_all_types
+                            channel_record_list
                         ):
                             reporting_embed.edit_field(
                                 0,
@@ -223,9 +214,7 @@ async def migrate(ctx: lb.Context):
                             ).edit_field(
                                 2,
                                 h.UNDEFINED,
-                                "{} / {}".format(
-                                    iterations, len(channel_record_list_all_types)
-                                ),
+                                "{} / {}".format(iterations, len(channel_record_list)),
                             )
                             await ctx.edit_last_response(embed=reporting_embed)
             await session.commit()
