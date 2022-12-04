@@ -8,7 +8,7 @@ from .reset_signaller import (
     remote_weekend_reset,
     remote_weekly_reset,
 )
-from .utils import _discord_alert
+from .utils import alert_owner
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ async def weekend_reset(ctx: lightbulb.Context) -> None:
 )
 @lightbulb.implements(lightbulb.SlashCommand)
 async def test_alert(ctx: lightbulb.Context) -> None:
-    await _discord_alert(
+    await alert_owner(
         ctx.options.text,
         bot=ctx.bot,
         channel=cfg.alerts_channel_id,
