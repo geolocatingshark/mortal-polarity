@@ -255,6 +255,22 @@ class BaseChannelRecord:
                 await session.commit()
 
     @classmethod
+    async def enable_channel(cls, channel_id: int, session):
+        await cls._set_channel(channel_id, True, session)
+
+    @classmethod
+    async def disable_channel(cls, channel_id: int, session):
+        await cls._set_channel(channel_id, False, session)
+
+    @classmethod
+    async def _set_channel(cls, channel_id: int, value: bool, session):
+        """Enable or disable autoposts for channel"""
+        channel_record = (
+            await session.execute(select(cls).where(cls.id == channel_id))
+        ).fetchall()[0][0]
+        channel_record.enabled = value
+
+    @classmethod
     async def get_enabled_channels(cls, session):
         """Helper  method to get enabled channels from a channel_table
 

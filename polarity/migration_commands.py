@@ -40,13 +40,10 @@ async def migratability(ctx: lb.Context) -> None:
 
         async with db_session() as session:
             async with session.begin():
-                channel_id_list = (
-                    await session.execute(
-                        select(channel_record).where(channel_record.enabled == True)
-                    )
-                ).fetchall()
-                channel_id_list = [] if channel_id_list is None else channel_id_list
-                channel_id_list = [channel[0].id for channel in channel_id_list]
+                channel_id_list = [
+                    channel.id
+                    for channel in await channel_record.get_enabled_channels(session)
+                ]
 
         bot_user = bot.get_me()
         no_of_channels = len(channel_id_list)
